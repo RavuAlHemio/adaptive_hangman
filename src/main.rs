@@ -188,7 +188,10 @@ fn main() {
         let guess = line.chars().nth(0).unwrap();
         if guesses.contains(&guess) {
             println!("You already guessed {}!", guess);
-            // let them guess again
+            continue;
+        }
+        if !dict::is_char_guessable(guess) {
+            println!("{} is not a guessable character!", guess);
             continue;
         }
         guesses.push(guess);

@@ -56,6 +56,6 @@ impl HangmanDict {
     }
 }
 
-fn is_char_guessable(character: char) -> bool {
+pub fn is_char_guessable(character: char) -> bool {
     character.is_alphabetic()
 }
