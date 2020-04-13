@@ -238,8 +238,10 @@ fn main() {
         let resolution_index = rng.gen_range(0, words.len());
         println!("Sorry! The word was {}!", words.get(resolution_index).unwrap());
         if debug_output {
-            for word in &words {
-                println!("or {}", word);
+            for (i, word) in words.iter().enumerate() {
+                if i != resolution_index {
+                    println!("or {}", word);
+                }
             }
         }
     }
