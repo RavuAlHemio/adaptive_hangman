@@ -1,0 +1,9 @@
+[package]
+name = "adaptive_hangman"
+version = "0.1.0"
+authors = ["Ondřej Hošek <ondra.hosek@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+getopts = { version = "0.2" }
+rand = { version = "0.7" }
