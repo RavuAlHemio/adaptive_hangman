@@ -10,9 +10,6 @@ use rand::Rng;
 use adaptive_hangman::dict;
 
 
-const LIVES: i64 = 8;
-
-
 fn load_dictionary(file_name: &str) -> Result<dict::HangmanDict, IOError> {
     let file = File::open(file_name)?;
     let reader = BufReader::new(file);
@@ -121,6 +118,7 @@ fn main() {
     opts.optopt("d", "dict", "Specifies the dictionary file to read.", "DICTFILE");
     opts.optopt("p", "pattern", "Specifies a specific pattern of words to choose.", "PATTERN");
     opts.optopt("m", "min-words", "Removes patterns matched by less than this number of words.", "NUMBER");
+    opts.optopt("l", "lives", "Number of lives.", "NUMBER");
     opts.optflag("h", "help", "Outputs this help.");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m },
@@ -134,6 +132,7 @@ fn main() {
     let debug_output = matches.opt_present("D");
     let dict_path = matches.opt_str("d").unwrap_or_else(|| "dict.txt".to_owned());
     let pattern_opt = matches.opt_str("p");
+    let mut lives: u64 = matches.opt_str("l").unwrap_or_else(|| "8".to_owned()).parse().unwrap();
 
     let mut dict = load_dictionary(&dict_path).unwrap();
     if let Some(min_words_str) = matches.opt_str("m") {
@@ -159,7 +158,6 @@ fn main() {
     // the fun begins
     let mut word_opt: Option<String> = None;
     let mut guesses: Vec<char> = Vec::new();
-    let mut lives = LIVES;
     while lives > 0 {
         if debug_output && word_opt.is_none() {
             output_letter_probabilities(&words);

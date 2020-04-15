@@ -38,6 +38,7 @@ fn main() {
 
     let mut opts = Options::new();
     opts.optopt("d", "dict", "Specifies the dictionary file to read.", "DICTFILE");
+    opts.optopt("l", "lives", "Number of lives.", "NUMBER");
     opts.optflag("h", "help", "Outputs this help.");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => { m },
@@ -50,6 +51,7 @@ fn main() {
 
     let pattern = matches.free.get(0).unwrap().clone();
     let dict_path = matches.opt_str("d").unwrap_or_else(|| "dict.txt".to_owned());
+    let lives: u64 = matches.opt_str("l").unwrap_or_else(|| "8".to_owned()).parse().unwrap();
 
     let dict = load_dictionary(&dict_path).unwrap();
     let words_opt: Option<&Vec<String>> = dict.patterns_words().get(&pattern);
@@ -76,23 +78,24 @@ fn main() {
         if guess_words.words.is_empty() {
             // nothing matches :-(
             continue;
-        } else if guess_words.words.len() == 1 {
+        }
+        if guess_words.guess.len() >= (lives as usize) {
+            // the guess must be shorter than the number of lives
+            continue;
+        }
+        if best_guess.is_some() && guess_words.guess.len() >= best_guess.as_ref().unwrap().len() {
+            // it makes no sense for the next best guess
+            // to be longer than the current best guess
+            continue;
+        }
+
+        if guess_words.words.len() == 1 {
             // exactly one word matches! :-)
             if best_guess.is_none() || best_guess.as_ref().unwrap().len() > guess_words.guess.len() {
                 best_guess = Some(guess_words.guess.clone());
                 best_word = Some(guess_words.words.get(0).unwrap().clone());
                 println!("new best guess: {:?} ({})", best_guess.as_ref().unwrap(), best_word.as_ref().unwrap());
             }
-            continue;
-        }
-
-        if guess_words.guess.len() > pattern.len() {
-            // the guess cannot be longer than the pattern
-            continue;
-        }
-        if best_guess.is_some() && guess_words.guess.len() >= best_guess.as_ref().unwrap().len() {
-            // it makes no sense for the next best guess
-            // to be longer than the current best guess
             continue;
         }
 
