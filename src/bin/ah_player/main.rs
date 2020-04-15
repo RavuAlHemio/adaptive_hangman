@@ -91,7 +91,7 @@ fn main() {
 
         if guess_words.words.len() == 1 {
             // exactly one word matches! :-)
-            if best_guess.is_none() || best_guess.as_ref().unwrap().len() > guess_words.guess.len() {
+            if best_guess.is_none() || best_guess.as_ref().unwrap().len() >= guess_words.guess.len() {
                 best_guess = Some(guess_words.guess.clone());
                 best_word = Some(guess_words.words.get(0).unwrap().clone());
                 println!("new best guess: {:?} ({})", best_guess.as_ref().unwrap(), best_word.as_ref().unwrap());
