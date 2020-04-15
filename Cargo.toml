@@ -7,3 +7,15 @@ edition = "2018"
 [dependencies]
 getopts = { version = "0.2" }
 rand = { version = "0.7" }
+
+[lib]
+name = "adaptive_hangman"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "ah_game"
+path = "src/bin/ah_game/main.rs"
+
+[[bin]]
+name = "ah_player"
+path = "src/bin/ah_player/main.rs"

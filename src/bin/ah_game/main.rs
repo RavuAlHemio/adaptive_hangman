@@ -4,12 +4,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Error as IOError, stdin};
 use std::iter::FromIterator;
 
-
 use getopts::Options;
 use rand::Rng;
 
-
-mod dict;
+use adaptive_hangman::dict;
 
 
 const LIVES: i64 = 8;
