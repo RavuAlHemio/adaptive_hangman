@@ -117,6 +117,7 @@ fn main() {
     opts.optflag("D", "debug", "Activates debug output.");
     opts.optopt("d", "dict", "Specifies the dictionary file to read.", "DICTFILE");
     opts.optopt("p", "pattern", "Specifies a specific pattern of words to choose.", "PATTERN");
+    opts.optopt("r", "randomly-remove", "Percentage of words to randomly remove from dictionary.", "PERCENT");
     opts.optopt("m", "min-words", "Removes patterns matched by less than this number of words.", "NUMBER");
     opts.optopt("l", "lives", "Number of lives.", "NUMBER");
     opts.optflag("h", "help", "Outputs this help.");
@@ -133,6 +134,7 @@ fn main() {
     let dict_path = matches.opt_str("d").unwrap_or_else(|| "dict.txt".to_owned());
     let pattern_opt = matches.opt_str("p");
     let mut lives: u64 = matches.opt_str("l").unwrap_or_else(|| "8".to_owned()).parse().unwrap();
+    let remove_percentage: f64 = matches.opt_str("r").unwrap_or_else(|| "0".to_owned()).parse().unwrap();
 
     let mut dict = load_dictionary(&dict_path).unwrap();
     if let Some(min_words_str) = matches.opt_str("m") {
@@ -140,6 +142,14 @@ fn main() {
         dict.remove_patterns_below(min_words);
     }
     let mut rng = rand::thread_rng();
+    if remove_percentage > 0.0 {
+        dict.remove_percentage_of_words(remove_percentage, &mut rng);
+    }
+
+    if dict.patterns_words().is_empty() {
+        println!("no more patterns left");
+        return;
+    }
 
     let mut pattern: String = if let Some(pat) = pattern_opt {
         pat
