@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use rand::Rng;
 
@@ -44,17 +44,7 @@ impl HangmanDict {
 
     pub fn remove_patterns_below(&mut self, hit_count: usize) {
         let dictionaries = &mut self.pattern_to_dict;
-        let mut bad_keys = HashSet::new();
-
-        for (key, val) in dictionaries.iter() {
-            if val.len() < hit_count {
-                bad_keys.insert(key.clone());
-            }
-        }
-
-        for bad_key in bad_keys {
-            dictionaries.remove(&bad_key);
-        }
+        dictionaries.retain(|_, words| words.len() >= hit_count);
     }
 
     pub fn remove_percentage_of_words<R: Rng>(&mut self, percentage: f64, rng: &mut R) {
