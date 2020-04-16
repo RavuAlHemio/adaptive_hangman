@@ -79,3 +79,73 @@ impl HangmanDict {
 pub fn is_char_guessable(character: char) -> bool {
     character.is_alphabetic()
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get_test_dict() -> HangmanDict {
+        let mut dict = HangmanDict::new();
+
+        dict.add_word("the");
+        dict.add_word("quick");
+        dict.add_word("brown");
+        dict.add_word("fox");
+        dict.add_word("jumps");
+        dict.add_word("over");
+        dict.add_word("lazy");
+        dict.add_word("dog");
+        dict.add_word("\u{C5}ngstr\u{F6}m");
+
+        dict
+    }
+
+    #[test]
+    fn test_add_word() {
+        let dict = get_test_dict();
+
+        assert_eq!(dict.patterns_words().len(), 4);
+
+        let three = dict.patterns_words().get("___").unwrap();
+        assert_eq!(three.len(), 3);
+        assert!(three.iter().any(|w| w == "THE"));
+        assert!(three.iter().any(|w| w == "FOX"));
+        assert!(three.iter().any(|w| w == "DOG"));
+
+        let four = dict.patterns_words().get("____").unwrap();
+        assert_eq!(four.len(), 2);
+        assert!(four.iter().any(|w| w == "OVER"));
+        assert!(four.iter().any(|w| w == "LAZY"));
+
+        let five = dict.patterns_words().get("_____").unwrap();
+        assert_eq!(five.len(), 3);
+        assert!(five.iter().any(|w| w == "QUICK"));
+        assert!(five.iter().any(|w| w == "BROWN"));
+        assert!(five.iter().any(|w| w == "JUMPS"));
+
+        let eight = dict.patterns_words().get("________").unwrap();
+        assert_eq!(eight.len(), 1);
+        assert!(eight.iter().any(|w| w == "\u{C5}NGSTR\u{D6}M"));
+    }
+
+    #[test]
+    fn test_remove_below() {
+        let mut dict = get_test_dict();
+        dict.remove_patterns_below(3);
+
+        assert_eq!(dict.patterns_words().len(), 2);
+
+        let three = dict.patterns_words().get("___").unwrap();
+        assert_eq!(three.len(), 3);
+        assert!(three.iter().any(|w| w == "THE"));
+        assert!(three.iter().any(|w| w == "FOX"));
+        assert!(three.iter().any(|w| w == "DOG"));
+
+        let five = dict.patterns_words().get("_____").unwrap();
+        assert_eq!(five.len(), 3);
+        assert!(five.iter().any(|w| w == "QUICK"));
+        assert!(five.iter().any(|w| w == "BROWN"));
+        assert!(five.iter().any(|w| w == "JUMPS"));
+    }
+}
