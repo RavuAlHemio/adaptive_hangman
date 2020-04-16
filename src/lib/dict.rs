@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::cmp::min;
 
 use rand::Rng;
 
@@ -62,9 +63,7 @@ impl HangmanDict {
         }
 
         let mut count_to_del = (percentage * (pats_words.len() as f64) / 100.0).floor() as usize;
-        if count_to_del > pats_words.len() {
-            count_to_del = pats_words.len();
-        }
+        count_to_del = min(count_to_del, pats_words.len());
         pats_words.truncate(pats_words.len() - count_to_del);
 
         self.pattern_to_dict.clear();
