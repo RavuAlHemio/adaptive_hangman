@@ -1,11 +1,16 @@
+mod opts;
+
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error as IOError};
+use std::process;
 
-use getopts::Options;
+use clap::derive::Clap;
 
 use adaptive_hangman::dict;
+
+use crate::opts::Opts;
 
 
 fn load_dictionary(file_name: &str) -> Result<dict::HangmanDict, IOError> {
@@ -34,29 +39,18 @@ impl GuessAndWords {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
-
-    let mut opts = Options::new();
-    opts.optopt("d", "dict", "Specifies the dictionary file to read.", "DICTFILE");
-    opts.optopt("l", "lives", "Number of lives.", "NUMBER");
-    opts.optflag("h", "help", "Outputs this help.");
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m },
-        Err(f) => { panic!(f.to_string()) },
+    let opts: Opts = match Opts::try_parse_from(args) {
+        Ok(o) => o,
+        Err(err) => {
+            eprint!("{}", err);
+            process::exit(1);
+        },
     };
-    if matches.opt_present("h") || matches.free.len() != 1 {
-        print!("{}", opts.usage(&format!("Usage: {} [options] PATTERN", program)));
-        return;
-    }
 
-    let pattern = matches.free.get(0).unwrap().clone();
-    let dict_path = matches.opt_str("d").unwrap_or_else(|| "dict.txt".to_owned());
-    let lives: u64 = matches.opt_str("l").unwrap_or_else(|| "8".to_owned()).parse().unwrap();
-
-    let dict = load_dictionary(&dict_path).unwrap();
-    let words_opt: Option<&Vec<String>> = dict.patterns_words().get(&pattern);
+    let dict = load_dictionary(&opts.dict_path).unwrap();
+    let words_opt: Option<&Vec<String>> = dict.patterns_words().get(&opts.pattern);
     if words_opt.is_none() {
-        print!("pattern {} not found in dictionary", pattern);
+        print!("pattern {} not found in dictionary", opts.pattern);
         return;
     }
     let words: Vec<String> = words_opt.unwrap().clone();
@@ -79,7 +73,7 @@ fn main() {
             // nothing matches :-(
             continue;
         }
-        if guess_words.guess.len() >= (lives as usize) {
+        if guess_words.guess.len() >= (opts.lives as usize) {
             // the guess must be shorter than the number of lives
             continue;
         }

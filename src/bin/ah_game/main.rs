@@ -1,13 +1,18 @@
+mod opts;
+
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Error as IOError, stdin};
 use std::iter::FromIterator;
+use std::process;
 
-use getopts::Options;
+use clap::derive::Clap;
 use rand::Rng;
 
 use adaptive_hangman::dict;
+
+use crate::opts::Opts;
 
 
 fn load_dictionary(file_name: &str) -> Result<dict::HangmanDict, IOError> {
@@ -111,39 +116,21 @@ fn apply_guess_to_pattern(pattern: &str, word: &str, guess: char) -> UpdatedPatt
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
-
-    let mut opts = Options::new();
-    opts.optflag("D", "debug", "Activates debug output.");
-    opts.optopt("d", "dict", "Specifies the dictionary file to read.", "DICTFILE");
-    opts.optopt("p", "pattern", "Specifies a specific pattern of words to choose.", "PATTERN");
-    opts.optopt("r", "randomly-remove", "Percentage of words to randomly remove from dictionary.", "PERCENT");
-    opts.optopt("m", "min-words", "Removes patterns matched by less than this number of words.", "NUMBER");
-    opts.optopt("l", "lives", "Number of lives.", "NUMBER");
-    opts.optflag("h", "help", "Outputs this help.");
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => { m },
-        Err(f) => { panic!(f.to_string()) },
+    let opts: Opts = match Opts::try_parse_from(args) {
+        Ok(o) => o,
+        Err(err) => {
+            eprint!("{}", err);
+            process::exit(1);
+        },
     };
-    if matches.opt_present("h") {
-        print!("{}", opts.usage(&format!("Usage: {} [options]", program)));
-        return;
-    }
 
-    let debug_output = matches.opt_present("D");
-    let dict_path = matches.opt_str("d").unwrap_or_else(|| "dict.txt".to_owned());
-    let pattern_opt = matches.opt_str("p");
-    let mut lives: u64 = matches.opt_str("l").unwrap_or_else(|| "8".to_owned()).parse().unwrap();
-    let remove_percentage: f64 = matches.opt_str("r").unwrap_or_else(|| "0".to_owned()).parse().unwrap();
-
-    let mut dict = load_dictionary(&dict_path).unwrap();
-    if let Some(min_words_str) = matches.opt_str("m") {
-        let min_words: usize = min_words_str.parse().unwrap();
+    let mut dict = load_dictionary(&opts.dict_path).unwrap();
+    if let Some(min_words) = opts.min_words {
         dict.remove_patterns_below(min_words);
     }
     let mut rng = rand::thread_rng();
-    if remove_percentage > 0.0 {
-        dict.remove_percentage_of_words(remove_percentage, &mut rng);
+    if opts.remove_percentage > 0.0 {
+        dict.remove_percentage_of_words(opts.remove_percentage, &mut rng);
     }
 
     if dict.patterns_words().is_empty() {
@@ -151,7 +138,7 @@ fn main() {
         return;
     }
 
-    let mut pattern: String = if let Some(pat) = pattern_opt {
+    let mut pattern: String = if let Some(pat) = opts.pattern {
         pat
     } else {
         // pick a pattern at random
@@ -161,15 +148,16 @@ fn main() {
     };
     let mut words: Vec<String> = dict.patterns_words().get(&pattern).unwrap().clone();
 
-    if debug_output {
+    if opts.debug {
         println!("{} words match this pattern", words.len());
     }
 
     // the fun begins
     let mut word_opt: Option<String> = None;
     let mut guesses: Vec<char> = Vec::new();
+    let mut lives = opts.lives;
     while lives > 0 {
-        if debug_output && word_opt.is_none() {
+        if opts.debug && word_opt.is_none() {
             output_letter_probabilities(&words);
         }
 
@@ -206,7 +194,7 @@ fn main() {
             let new_words = whittle_down_list(&words, &guesses);
 
             if new_words.len() == 0 {
-                if debug_output {
+                if opts.debug {
                     println!("oh no, we can't elude the player any longer");
                 }
 
@@ -215,7 +203,7 @@ fn main() {
                 let forced_word = words.get(forced_word_index).unwrap();
                 word_opt = Some(forced_word.clone());
             } else {
-                if debug_output {
+                if opts.debug {
                     println!("ooh, we still have {} word(s)", new_words.len());
                 }
                 words = new_words;
@@ -243,7 +231,7 @@ fn main() {
     } else {
         let resolution_index = rng.gen_range(0, words.len());
         println!("Sorry! The word was {}!", words.get(resolution_index).unwrap());
-        if debug_output {
+        if opts.debug {
             for (i, word) in words.iter().enumerate() {
                 if i != resolution_index {
                     println!("or {}", word);
